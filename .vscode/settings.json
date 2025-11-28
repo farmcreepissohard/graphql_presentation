@@ -1,0 +1,7 @@
+{
+    "workbench.colorTheme": "Default Dark+",
+    "markdown.marp.themes":[
+        "/presentation/theme.css"
+    ],
+    "markdown.marp.exportType": "pdf"
+}

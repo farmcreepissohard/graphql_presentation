@@ -1,0 +1,96 @@
+/* @theme theme */
+
+@import "default";
+
+:root {
+  --color-theme: #f0fdfa;
+  --color-normal-text: #111827;
+  --color-primary: #0d9488;
+  --color-trans: #55a991;
+  --color-strong: #f59e0b;
+  --color-marker: #8ad39a;
+  --color-code-bg: #e0fffa
+}
+
+section {
+  background-color: var(--color-theme);
+  color: var(--color-normal-text);
+}
+
+section h1,
+section h2,
+section h3,
+section h4, {
+  color: var(--color-primary);
+}
+
+section h3 strong{
+  color: var(--color-strong);
+}
+
+strong {
+  color: var(--color-strong);
+}
+
+section::after {
+  content: " ";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: linear-gradient(to right, #0d9488, #2dd4bf);
+}
+
+ul li::marker {
+  color: var(--color-marker);
+  font-weight: bold;      
+  font-size: 1.2em;       
+}
+
+blockquote {
+  background: #ccfbf1;
+  border-left: 10px solid #0d9488;
+  color: #134e4a;
+}
+
+section.title-page{
+  background-color: var(--color-trans);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+section.title-page h2{
+  color: #f2f5f4;
+}
+
+section.content-page{
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* pre {
+    background-color: #26936d;
+    border: 1px solid #c0ded5;
+    border-radius: 8px;
+    color: #ffffff;
+} */
+
+pre {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid #c0ded5;
+    border-radius: 8px;
+}
+
+/* pre {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  border: 2px solid #0f766e;
+  border-radius: 8px;
+}
+
+pre code span {
+  color: inherit;
+} */
