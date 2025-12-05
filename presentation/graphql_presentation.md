@@ -58,24 +58,47 @@ theme: theme
 
 Hiểu đơn giản là **1 cách khác để xây dựng API** thay vì RESTAPI thông thường hay dùng.
 
-**REST: Nhiều endpoints với response cố định**
+##### REST API: Nhiều endpoints, response cố định
+
+- Mỗi resource có 1 endpoint riêng
+- Server quyết định trả về những gì
+- Ví dụ: `/users/123` → Trả toàn bộ thông tin user
+
+##### GraphQL: Một endpoint, response tùy chỉnh
+
+- Chỉ 1 endpoint duy nhất (thường là `/graphql`)
+- **Client quyết định** cần lấy những field nào
+- Lấy đúng cái cần, không thừa không thiếu
+
+---
+
+<!-- _class: content-page -->
+
+## So sánh REST và GraphQL
+
+### Ví dụ: Lấy tên user và tiêu đề bài post
+
+**REST API:**
 
 ```
-/users/123
+GET /users/123        → {id, name, email, age, address, ...}
+GET /users/123/posts  → [{id, title, content, createdAt, ...}, ...]
 ```
 
-**GraphQL: Một endpoint với response tùy ý**
+→ Gọi **2 requests**, nhận **nhiều data không cần thiết**
 
-```
-query{
-    user(id: 123) {
-        name
-        posts{
-            title
-        }
-    }
+**GraphQL:**
+
+```graphql
+query {
+  user(id: 123) {
+    name
+    posts { title }
+  }
 }
 ```
+
+→ Chỉ **1 request**, nhận **đúng data cần thiết**
 
 ---
 
@@ -87,66 +110,35 @@ query{
 
 <!-- _class: content-page -->
 
-## Những gì cần biết về GraphQL
+## 1. Schema - Hợp đồng giữa Client và Server
 
-### Schema
+**Schema là gì?**
+- **Bản thiết kế** mô tả toàn bộ cấu trúc dữ liệu
+- Giống "menu nhà hàng" - liệt kê những gì có thể lấy
 
-- **Mô hình hóa** dữ liệu
-- Cốt lõi là **hợp đồng** giữa Client và Server
+**Tại sao cần?**
+- **Type Safety**: Kiểu dữ liệu rõ ràng, catch lỗi sớm
+- **Self-documenting**: Client biết API có gì mà không cần docs riêng
+- **Validation**: Tự động validate request
 
 ---
 
 <!-- _class: content-page -->
 
-## Những gì cần biết về GraphQL
+## Schema - Các thành phần chính
 
-### Schema
-
-- Định nghĩa **User object**
-
-```
+```graphql
+# 1. Object Types - Định nghĩa đối tượng
 type User {
-    id: ID!
-    name: String!
-    posts: [Posts!]!
-    createdAt: DateTime!
+  id: ID!           # ! = bắt buộc
+  name: String!
+  posts: [Post!]!   # Mảng Post
 }
-```
 
----
-
-<!-- _class: content-page -->
-
-## Những gì cần biết về GraphQL
-
-### Schema
-
-- Định nghĩa **Post object**
-
-```
-type Post {
-    id: ID!
-    title: String!
-    content: String
-    createdAt: DateTime!
-}
-```
-
----
-
-<!-- _class: content-page -->
-
-## Những gì cần biết về GraphQL
-
-### Schema
-
-- Định nghĩa **input**
-
-```
+# 2. Input Types - Dữ liệu gửi lên
 input PostInput {
   title: String!
   content: String
-  isPublished: Boolean
 }
 ```
 
@@ -154,55 +146,24 @@ input PostInput {
 
 <!-- _class: content-page -->
 
-## Những gì cần biết về GraphQL
+## Schema - Query, Mutation, Subscription
 
-### Schema
-
-- Định nghĩa **Query method** cho Post
-
-```
+```graphql
+# 3. Query - Đọc dữ liệu (GET)
 type Query {
   posts: [Post!]!
-
   post(id: ID!): Post
 }
-```
 
----
-
-<!-- _class: content-page -->
-
-## Những gì cần biết về GraphQL
-
-### Schema
-
-- Định nghĩa **Mutation method** cho Post
-
-```
+# 4. Mutation - Thay đổi dữ liệu (POST/PUT/DELETE)
 type Mutation {
   createPost(data: PostInput!): Post!
-
   updatePost(id: ID!, data: PostInput!): Post
-
-  deletePost(id: ID!): Post
 }
-```
 
----
-
-<!-- _class: content-page -->
-
-## Những gì cần biết về GraphQL
-
-### Schema
-
-- Định nghĩa **Subscription method** cho Post
-
-```
+# 5. Subscription - Real-time (WebSocket)
 type Subscription {
   postAdded: Post!
-
-  postUpdated(id: ID!): Post
 }
 ```
 
@@ -210,21 +171,37 @@ type Subscription {
 
 <!-- _class: content-page -->
 
-## Những gì cần biết về GraphQL
+## 2. Query - Đọc dữ liệu
 
-### Queries
+**Đặc điểm:**
+- Tương đương **GET** trong REST
+- Client chọn chính xác fields cần lấy
+- Lấy nhiều resource trong 1 request
 
-- Phương thức **GET**
-- Cốt lõi là để **lấy** dữ liệu
+---
 
-```
+<!-- _class: content-page -->
+
+## Query - Ví dụ
+
+```graphql
 query {
-    user(id: 123) {
-        name
-        posts{
-            title
-        }
+  user(id: 123) {
+    name
+    posts { title }
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "user": {
+      "name": "John Doe",
+      "posts": [{"title": "GraphQL basics"}]
     }
+  }
 }
 ```
 
@@ -232,18 +209,19 @@ query {
 
 <!-- _class: content-page -->
 
-## Những gì cần biết về GraphQL
+## 3. Mutation - Thay đổi dữ liệu
 
-### Mutation
+**Đặc điểm:**
+- Tương đương **POST/PUT/DELETE** trong REST
+- Tạo, cập nhật, xóa dữ liệu
+- Trả về dữ liệu sau khi thay đổi
 
-- Phương thức **POST, PUT, PATCH, DELETE**
-- Cốt lõi là để **thay đổi** dữ liệu
-
-```
+```graphql
 mutation {
-    createPost(data: {"title": "abc", "content": "xyz"}){
-        id
-    }
+  createPost(data: {title: "abc", content: "xyz"}) {
+    id
+    title
+  }
 }
 ```
 
@@ -251,50 +229,20 @@ mutation {
 
 <!-- _class: content-page -->
 
-## Những gì cần biết về GraphQL
+## 4. Subscription - Real-time Updates
 
-### Mutation
+**Đặc điểm:**
+- Dùng **WebSocket** thay vì HTTP
+- Server **push** data khi có thay đổi
+- Client giữ kết nối mở liên tục
 
-- Phương thức **POST, PUT, PATCH, DELETE**
-- Cốt lõi là để **thay đổi** dữ liệu
+**Khi nào dùng:** Chat, notifications, live dashboard
 
-```
-mutation {
-    createPost(data: {"title": "abc", "content": "xyz"}){
-        id
-    }
-}
-```
-
----
-
-<!-- _class: content-page -->
-
-## Những gì cần biết về GraphQL
-
-### Subscription
-
-- Lắng nghe sự kiện **(Real-Time)**
-- Ứng dụng trong app chat, thông báo, chứng khoáng, bảng tỉ số bóng đá, cá độ, tài xỉu ...
-- Client mở một kết nối bền vững liên tục (thường là **WebSocket**) với Server.
-- Cần cả HttpLink (HTTP) và WebSocketLink (WSS)
-
----
-
-<!-- _class: content-page -->
-
-## Những gì cần biết về GraphQL
-
-### Subscription
-
-- Cú pháp **tương tự** query, khác ở chỗ thay query thành subscription
-
-```
-subscription OnPostAdded {
+```graphql
+subscription {
   postAdded {
     id
     title
-    createdAt
   }
 }
 ```
@@ -303,19 +251,66 @@ subscription OnPostAdded {
 
 <!-- _class: title-page -->
 
-## Tại sao GraphQL hiệu quả?
+## Ưu điểm của GraphQL
 
 ---
 
 <!-- _class: content-page -->
 
-## Tại sao GraphQL hiệu quả?
+## Ưu điểm của GraphQL
 
-- Thay vì backend phải biết rõ frontend và ngược lại, 2 thằng **chỉ cần biết qua 1 thằng trung gian duy nhất** là GraphQL.
-- **Lấy đủ** không thấy dư hoặc thiếu.
-- **Tiết kiệm dữ liệu, app chạy nhanh hơn** vì payload JSON nhỏ hơn trong 1 số trường hợp.
-- **Typing mạnh mẽ, Schema rõ ràng**, code an toàn, ít bug.
-- Không cần đợi backend sửa API endpoint.
+### 1. Không over/under-fetching
+
+**Over-fetching (REST):** Nhận thừa data không cần
+```
+GET /users/123 → 20 fields (chỉ cần name)
+```
+
+**Under-fetching (REST):** Thiếu data, cần nhiều requests
+```
+GET /posts/1, GET /users/123, GET /comments/...
+```
+
+**GraphQL:** Lấy đúng cái cần, 1 request
+```graphql
+query { post(id:1) { title, author { name }, comments { text } } }
+```
+
+---
+
+<!-- _class: content-page -->
+
+## Ưu điểm của GraphQL
+
+### 2. Giảm coupling Frontend - Backend
+
+**REST:** Backend phải biết Frontend cần gì → Tạo endpoint riêng
+
+**GraphQL:** Chỉ cần thống nhất **Schema** → Phát triển song song
+
+### 3. Type Safety & Self-documenting
+
+- Kiểu dữ liệu rõ ràng, catch lỗi sớm
+- Schema = Documentation tự động
+- Code completion, validation tốt
+
+---
+
+<!-- _class: content-page -->
+
+## Ưu điểm của GraphQL
+
+### 4. Hiệu năng tốt hơn
+
+**Giảm requests:** 1 query thay vì nhiều REST calls
+- REST: 5 requests × 100ms = 500ms
+- GraphQL: 1 request × 150ms = 150ms
+
+**Tiết kiệm bandwidth:** Payload nhỏ hơn (chỉ field cần thiết)
+
+### 5. Frontend linh hoạt hơn
+
+Field có trong schema → Frontend dùng luôn, không đợi Backend deploy
 
 ---
 
@@ -365,6 +360,87 @@ subscription OnPostAdded {
 - GraphQL được tạo ra để giải quyết vấn đề scaling của Facebook.
 
 - Cân nhắc sử dụng GraphQL khi gọi quá nhiều API mỗi page.
+
+---
+
+<!-- _class: title-page -->
+
+## Nhược điểm của GraphQL
+
+---
+
+<!-- _class: content-page -->
+
+## Nhược điểm của GraphQL
+
+### 1. Độ phức tạp cao hơn
+- Backend: Phải xây dựng Schema, Resolvers
+- Learning curve: Team phải học nhiều concept mới
+- REST đơn giản hơn cho CRUD cơ bản
+
+### 2. Caching khó hơn
+- REST: Dễ cache theo endpoint (`/users/123`)
+- GraphQL: Mỗi query khác nhau → Cần Apollo Cache, DataLoader
+
+---
+
+<!-- _class: content-page -->
+
+## Nhược điểm của GraphQL
+
+### 3. N+1 Query Problem
+```graphql
+{ posts { author { name } } }  # 100 posts = 101 DB queries!
+```
+→ Cần DataLoader để tối ưu
+
+### 4. File Upload phức tạp
+- Không native support, cần library hoặc dùng REST riêng
+
+---
+
+<!-- _class: content-page -->
+
+## Nhược điểm của GraphQL
+
+### 5. HTTP Status Code mất ý nghĩa
+- Luôn trả 200 OK (kể cả lỗi) → Khó monitor
+
+### 6. Security risks
+```graphql
+{ posts { author { posts { author { ... } } } } }
+```
+→ Query độc có thể làm sập server
+→ Cần depth limiting, complexity analysis
+
+---
+
+<!-- _class: content-page -->
+
+## Nhược điểm của GraphQL
+
+### 7. Khó debug & monitoring
+- Mọi request qua `/graphql` → Khó track query nào chậm
+- Cần tools đặc biệt (Apollo Studio)
+
+### 8. Overhead cho dữ liệu đơn giản
+- `GET /users` (REST) đơn giản hơn viết Schema + Resolvers
+
+---
+
+<!-- _class: content-page -->
+
+## Kết luận
+
+**GraphQL không phải silver bullet**
+
+✅ **Tốt cho:** Dữ liệu phức tạp, nhiều clients, nested data
+
+❌ **Không tốt cho:** CRUD đơn giản, file upload, team nhỏ
+
+**Cân nhắc:** Team experience, độ phức tạp data, infrastructure
+
+→ **Đôi khi REST + WebSocket đơn giản hơn!**
 
 ---
 
